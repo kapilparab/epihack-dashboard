@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from mangum import Mangum
 
 from app.config import get_settings
-from app.routers import analytics, reports
+from app.routers import analytics, reports, survey
 
 settings = get_settings()
 
@@ -25,6 +25,7 @@ app.add_middleware(
 
 app.include_router(reports.router)
 app.include_router(analytics.router)
+app.include_router(survey.router)
 
 
 @app.on_event("startup")
@@ -34,6 +35,7 @@ async def validate_config():
         "DYNAMO_ACCESS_KEY_ID":     settings.DYNAMO_ACCESS_KEY_ID,
         "DYNAMO_SECRET_ACCESS_KEY": settings.DYNAMO_SECRET_ACCESS_KEY,
         "DYNAMO_REPORTS_TABLE":     settings.DYNAMO_REPORTS_TABLE,
+        "DYNAMO_SURVEYS_TABLE":     settings.DYNAMO_SURVEYS_TABLE,
         "S3_IMAGES_BUCKET":         settings.S3_IMAGES_BUCKET,
     }
     missing = [k for k, v in required.items() if not v]
