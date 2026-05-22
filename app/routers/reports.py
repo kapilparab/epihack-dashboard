@@ -8,6 +8,7 @@ from app.config import get_settings
 from app.jwt_validator import get_current_user
 from app.utils.dynamo import client as db
 from app.utils import s3 as s3_utils
+from datetime import datetime, timezone
 
 _settings = get_settings()
 
@@ -45,6 +46,7 @@ async def receive_report(
 
         report_id = str(uuid4())
         data["report_id"]         = report_id
+        data["submitted_at"] = datetime.now(timezone.utc).isoformat()
         data["submitted_by"]      = current_user["sub"]
         data["submitted_by_email"] = current_user.get("email", "")
         data["lat"]  = Decimal(str(data["lat"]))
@@ -105,6 +107,32 @@ async def list_my_reports(current_user: dict = Depends(get_current_user)):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to list reports",
+        )
+
+@router.get("/reports/{report_id}")
+async def get_report(
+    report_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """Return a single report by report_id."""
+    try:
+        doc = db.find_one(
+            _settings.DYNAMO_REPORTS_TABLE,
+            filters={"report_id": report_id},
+        )
+        if not doc:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Report not found",
+            )
+        return {"status": "success", "report": doc}
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error fetching report {report_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch report",
         )
 
 

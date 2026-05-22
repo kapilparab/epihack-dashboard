@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     # DynamoDB tables
     DYNAMO_REPORTS_TABLE: str = "epihack_reports"
     DYNAMO_SURVEYS_TABLE: str = "epihack_surveys"
+    DYNAMO_ALERTS_TABLE: str = "epihack-alerts"
 
     # S3
     S3_IMAGES_BUCKET: str = "epihack"
