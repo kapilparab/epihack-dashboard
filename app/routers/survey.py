@@ -3,11 +3,10 @@ Survey API for detailed field data ingestion.
 Accepts structured survey data for Human, Livestock, Wildlife, and Environment reports.
 """
 
-from datetime import datetime
-from decimal import Decimal
+from datetime import datetime, timezone
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
 from pydantic import BaseModel, Field
 
 from app.config import get_settings
@@ -144,7 +143,7 @@ async def _save_survey(
     """
     try:
         survey_id = str(uuid4())
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
 
         # Build survey document
         survey_doc = {
@@ -257,7 +256,7 @@ async def submit_human_report(
             status="success",
             survey_id=survey_id,
             report_type="human",
-            submitted_at=datetime.utcnow().isoformat(),
+            submitted_at=datetime.now(timezone.utc).isoformat(),
         )
 
     except HTTPException:
@@ -302,7 +301,7 @@ async def submit_livestock_report(
             status="success",
             survey_id=survey_id,
             report_type="livestock",
-            submitted_at=datetime.utcnow().isoformat(),
+            submitted_at=datetime.now(timezone.utc).isoformat(),
         )
 
     except HTTPException:
@@ -345,7 +344,7 @@ async def submit_wildlife_report(
             status="success",
             survey_id=survey_id,
             report_type="wildlife",
-            submitted_at=datetime.utcnow().isoformat(),
+            submitted_at=datetime.now(timezone.utc).isoformat(),
         )
 
     except HTTPException:
@@ -392,7 +391,7 @@ async def submit_environment_report(
             status="success",
             survey_id=survey_id,
             report_type="environment",
-            submitted_at=datetime.utcnow().isoformat(),
+            submitted_at=datetime.now(timezone.utc).isoformat(),
         )
 
     except HTTPException:
