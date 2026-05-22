@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from functools import lru_cache
 from pydantic_settings import BaseSettings
+from pydantic import ConfigDict
 
 _ENV_FILE = Path(__file__).resolve().parents[1] / ".env"
 _IS_LAMBDA = "LAMBDA_TASK_ROOT" in os.environ
@@ -9,6 +10,11 @@ _IS_LAMBDA = "LAMBDA_TASK_ROOT" in os.environ
 
 class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
+
+    # Application secrets and tokens
+    SECRET_KEY: str = "change-me-in-production-use-openssl-rand-hex-32"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    ALGORITHM: str = "HS256"
 
     # AWS credentials (shared by DynamoDB and S3)
     DYNAMO_ACCESS_KEY_ID: str = ""
@@ -31,12 +37,20 @@ class Settings(BaseSettings):
     COGNITO_USER_POOL_ID: str = ""
     COGNITO_CLIENT_IDS: str = ""
     COGNITO_CLIENT_SECRETS: str = ""
+    COGNITO_CLIENT_ID: str = ""  # Legacy fallback
+    COGNITO_CLIENT_SECRET: str = ""  # Legacy fallback
+    COGNITO_REDIRECT_URI: str = ""
 
     # Derived — set automatically from pool ID + region if blank
     COGNITO_AUTHORITY: str = ""
 
     # CORS
     CORS_ORIGINS: str = "http://localhost:5173"
+
+    # Alert thresholds
+    ALERT_RESPONSE_THRESHOLD: int = 10
+    ALERT_ANOMALY_Z_SCORE: float = 2.5
+    ALERT_SCAN_INTERVAL_MINUTES: int = 15
 
     @property
     def cognito_authority(self) -> str:
@@ -60,9 +74,11 @@ class Settings(BaseSettings):
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.CORS_ORIGINS.split(",")]
 
-    class Config:
-        env_file = None if _IS_LAMBDA else str(_ENV_FILE)
-        case_sensitive = True
+    model_config = ConfigDict(
+        env_file=None if _IS_LAMBDA else str(_ENV_FILE),
+        case_sensitive=True,
+        extra="ignore",  # Ignore extra fields from .env
+    )
 
 
 @lru_cache
