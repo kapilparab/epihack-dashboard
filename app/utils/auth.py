@@ -16,11 +16,11 @@ class _CognitoValidator:
     """
 
     def __init__(self):
-        self._jwks_url = f"{settings.COGNITO_AUTHORITY}/.well-known/jwks.json"
-        self._issuer = settings.COGNITO_AUTHORITY
-        self._audience = settings.COGNITO_CLIENT_ID
+        # Fix #2: use the computed property, not the raw empty-string field
+        self._jwks_url = f"{settings.cognito_authority}/.well-known/jwks.json"
+        self._issuer   = settings.cognito_authority
         self._keys: dict[str, dict] = {}
-        print(f"[auth] Validator initialised — audience={self._audience}")
+        print(f"[auth] Validator initialised — issuer={self._issuer}")
 
     def _load_keys(self) -> None:
         resp = httpx.get(self._jwks_url, timeout=10)
@@ -29,16 +29,25 @@ class _CognitoValidator:
         print(f"[auth] Loaded {len(self._keys)} JWKS keys from Cognito")
 
     def decode(self, token: str) -> dict:
-        kid = jose_jwt.get_unverified_headers(token).get("kid", "")
+        headers = jose_jwt.get_unverified_headers(token)
+        claims  = jose_jwt.get_unverified_claims(token)
+
+        kid = headers.get("kid", "")
         if kid not in self._keys:
             self._load_keys()
         if kid not in self._keys:
             raise JWTError(f"Unknown signing key: {kid}")
+
+        # Fix #1: validate aud against the full client allowlist, not a single non-existent field
+        aud = claims.get("aud")
+        if aud not in settings.allowed_client_ids:
+            raise JWTError(f"Token audience '{aud}' is not a registered client")
+
         return jose_jwt.decode(
             token,
             self._keys[kid],
             algorithms=["RS256"],
-            audience=self._audience,
+            audience=aud,
             issuer=self._issuer,
         )
 
@@ -47,8 +56,8 @@ _validator = _CognitoValidator()
 
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(_bearer)) -> dict:
+    """Validate a Cognito id_token and return its claims as the current user."""  # Fix #7: docstring first
     token = credentials.credentials
-    """Validate a Cognito id_token and return its claims as the current user."""
     try:
         return _validator.decode(token)
     except Exception as e:

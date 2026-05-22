@@ -8,7 +8,7 @@ from app.utils.auth import get_current_user, require_role
 from app.utils.dynamo import client as db
 
 settings = get_settings()
-router = APIRouter(prefix="/api/alerts", tags=["Alerts"])
+router = APIRouter(prefix="/alerts", tags=["Alerts"])
 TABLE = settings.DYNAMO_ALERTS_TABLE
 
 
@@ -20,7 +20,7 @@ def _to_out(doc: dict) -> AlertOut:
 
 @router.get("/", response_model=list[AlertOut])
 async def list_alerts(
-    status: AlertStatus | None = Query(default=None),
+    alert_status: AlertStatus | None = Query(default=None),
     severity: AlertSeverity | None = Query(default=None),
     category: SurveyCategory | None = Query(default=None),
     skip: int = Query(0, ge=0),
@@ -33,8 +33,8 @@ async def list_alerts(
     """
     docs = db.scan(TABLE)
 
-    if status:
-        docs = [d for d in docs if d.get("status") == status]
+    if alert_status:
+        docs = [d for d in docs if d.get("status") == alert_status]
     if severity:
         docs = [d for d in docs if d.get("severity") == severity]
     if category:

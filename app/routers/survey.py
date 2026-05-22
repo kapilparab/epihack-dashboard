@@ -404,7 +404,7 @@ async def submit_environment_report(
         )
 
 
-@router.get("/surveys")
+@router.get("/")
 async def list_all_surveys(current_user: dict = Depends(get_current_user)):
     """Retrieve all surveys from DynamoDB."""
     try:
@@ -418,7 +418,7 @@ async def list_all_surveys(current_user: dict = Depends(get_current_user)):
         )
 
 
-@router.get("/surveys/me")
+@router.get("/me")
 async def list_my_surveys(current_user: dict = Depends(get_current_user)):
     """Retrieve all surveys submitted by the authenticated user."""
     try:
@@ -435,7 +435,7 @@ async def list_my_surveys(current_user: dict = Depends(get_current_user)):
         )
 
 
-@router.get("/surveys/{report_type}")
+@router.get("/{report_type}")
 async def list_surveys_by_type(
     report_type: str, current_user: dict = Depends(get_current_user)
 ):

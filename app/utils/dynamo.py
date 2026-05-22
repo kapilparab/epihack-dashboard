@@ -64,6 +64,11 @@ class DynamoDBClient:
             response = self._table(table_name).scan(FilterExpression=expr)
         return [_deserialize(item) for item in response.get("Items", [])]
 
+    def find_one(self, table_name: str, filters: dict) -> dict | None:
+        """Return the first item matching the given filters, or None."""
+        results = self.scan(table_name, filters)
+        return results[0] if results else None
+
 
 # Single shared instance — import this everywhere
 client = DynamoDBClient()
